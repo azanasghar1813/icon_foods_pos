@@ -6,7 +6,7 @@ const nullableId = z
     if (v === undefined || v === null || v === '') return null;
     return v;
   })
-  .pipe(z.string().uuid().nullable());
+  .pipe(z.string().nullable());
 
 export const categoryCreateSchema = z.object({
   name: z.string().min(1, 'Category name is required'),

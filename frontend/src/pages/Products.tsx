@@ -126,6 +126,9 @@ export default function Products() {
         name: deal.name,
         price: deal.price,
         code: deal.code || deal.product_code,
+        status: deal.is_active === 0 || deal.lifecycle_state === "HIDDEN" || deal.status === "HIDDEN" ? "Hidden" : "Active",
+        kitchen: "Main Kitchen",
+        stockStatus: "In Stock",
       }))
 
       setProducts([...loadedProducts, ...loadedDeals])

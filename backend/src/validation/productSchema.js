@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const productCreateSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  category_id: z.string().uuid('Invalid category ID format'),
+  category_id: z.string().min(1, 'Category ID is required'),
   price: z.number().min(0, 'Price must be non-negative'),
   product_code: z.string().optional(),
   display_name: z.string().optional(),
@@ -19,7 +19,7 @@ export const productCreateSchema = z.object({
   is_suggested: z.number().int().min(0).max(1).optional().default(0),
   visibility: z.string().optional().default('VISIBLE'),
   status: z.string().optional().default('AVAILABLE'),
-  addons: z.array(z.string().uuid()).optional(),
+  addons: z.array(z.string()).optional(),
   variants: z.array(z.object({
     name: z.string(),
     price: z.number().min(0).optional()
@@ -28,7 +28,7 @@ export const productCreateSchema = z.object({
 
 export const productUpdateSchema = z.object({
   name: z.string().min(1).optional(),
-  category_id: z.string().uuid().optional(),
+  category_id: z.string().optional(),
   price: z.number().min(0).optional(),
   product_code: z.string().optional(),
   display_name: z.string().optional(),
@@ -45,7 +45,7 @@ export const productUpdateSchema = z.object({
   visibility: z.string().optional(),
   status: z.string().optional(),
   lifecycle_state: z.string().optional(),
-  addons: z.array(z.string().uuid()).optional(),
+  addons: z.array(z.string()).optional(),
   variants: z.array(z.object({
     name: z.string(),
     price: z.number().min(0).optional()
