@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starting Icon Food Software...</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-app-region: drag; /* Allows moving the window if needed */
+        }
+
+        .close-btn-top {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: none;
+            color: #64748b;
+            font-size: 28px;
+            cursor: pointer;
+            z-index: 100;
+            line-height: 1;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s, color 0.2s;
+            -webkit-app-region: no-drag;
+        }
+
+        .close-btn-top:hover {
+            background-color: #f1f5f9;
+            color: #ef4444;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .logo-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Pulse animation behind the logo */
+        .logo-pulse {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: rgba(255, 123, 0, 0.1);
+            animation: pulse 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 0;
+        }
+
+        .logo-pulse:nth-child(2) {
+            animation-delay: 1s;
+        }
+
+        .logo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            z-index: 1;
+            /* Optional: drop shadow for the logo */
+            filter: drop-shadow(0px 8px 16px rgba(0,0,0,0.1));
+            animation: float 4s ease-in-out infinite;
+        }
+
+        h1 {
+            color: #1f2937;
+            font-size: 24px;
+            margin: 0 0 10px 0;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-highlight {
+            color: #ff7b00;
+        }
+
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 1rem;
+            padding: 10px 20px;
+            background: #f9fafb;
+            border-radius: 999px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 123, 0, 0.2);
+            border-top-color: #ff7b00;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        #status {
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .error-state .spinner {
+            display: none;
+        }
+
+        .error-state {
+            border-color: #fca5a5;
+            background: #fef2f2;
+        }
+
+        .error-state #status {
+            color: #ef4444;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.8); opacity: 0.8; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .error-details {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 11px;
+            color: #334155;
+            width: 85%;
+            max-height: 120px;
+            overflow-y: auto;
+            text-align: left;
+            border: 1px solid #e2e8f0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <button class="close-btn-top" id="btnCloseTop" title="Close">&times;</button>
+    <div class="container">
+        <div class="logo-container">
+            <div class="logo-pulse"></div>
+            <div class="logo-pulse"></div>
+            <img src="./splash-logo.png" alt="Icon Food Software Logo" class="logo">
+        </div>
+        
+        <h1>Icon Food <span class="brand-highlight">Software</span></h1>
+        
+        <div class="status-container" id="statusContainer">
+            <div class="spinner" id="spinner"></div>
+            <div id="status">Starting backend systems...</div>
+        </div>
+        
+        <div id="errorDetails" class="error-details" style="display: none;"></div>
+    </div>
+
+    <script>
+        document.getElementById('btnCloseTop').addEventListener('click', () => {
+            if (window.electronAPI && window.electronAPI.appQuit) {
+                window.electronAPI.appQuit();
+            }
+        });
+        // main.js will use executeJavaScript to update this
+        window.updateStatus = (message, isError = false, errorLog = '') => {
+            const statusEl = document.getElementById('status');
+            const containerEl = document.getElementById('statusContainer');
+            const errorDetailsEl = document.getElementById('errorDetails');
+            
+            statusEl.textContent = message;
+            
+            if (isError) {
+                containerEl.classList.add('error-state');
+                if (errorLog) {
+                    errorDetailsEl.textContent = errorLog;
+                    errorDetailsEl.style.display = 'block';
+                }
+            } else {
+                containerEl.classList.remove('error-state');
+                errorDetailsEl.style.display = 'none';
+            }
+        };
+    </script>
+</body>
+</html>

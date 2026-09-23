@@ -1,0 +1,140 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
+    --radius: 0.5rem;
+    
+    /* Category styles default to standard card in light mode */
+    --cat-core-bg: var(--card);
+    --cat-core-text: var(--card-foreground);
+    --cat-burgers-bg: var(--card);
+    --cat-burgers-text: var(--card-foreground);
+    --cat-sides-bg: var(--card);
+    --cat-sides-text: var(--card-foreground);
+    --cat-drinks-bg: var(--card);
+    --cat-drinks-text: var(--card-foreground);
+    --cat-desserts-bg: var(--card);
+    --cat-desserts-text: var(--card-foreground);
+    --cat-border-color: var(--border);
+    --cat-border-width: 1px;
+    
+    /* Checkout button defaults */
+    --checkout-bg: #fcb47c;
+    --checkout-hover: #faa05c;
+    --checkout-text: #ffffff;
+  }
+
+  .dark {
+    --background: 220 12% 9%;
+    --foreground: 220 14% 96%;
+    --card: 220 13% 14%;
+    --card-foreground: 220 14% 96%;
+    --popover: 220 14% 12%;
+    --popover-foreground: 220 14% 96%;
+    --primary: 36 79% 57%;
+    --primary-foreground: 27 52% 8%;
+    --secondary: 220 14% 12%;
+    --secondary-foreground: 222 11% 65%;
+    --muted: 220 13% 19%;
+    --muted-foreground: 222 11% 65%;
+    --accent: 36 79% 57%;
+    --accent-foreground: 27 52% 8%;
+    --destructive: 3 74% 63%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 11% 16%;
+    --input: 222 11% 16%;
+    --ring: 36 79% 57%;
+    
+    /* Categories */
+    --cat-core-bg: #1F2228;
+    --cat-core-text: #F2F3F5;
+    --cat-burgers-bg: #1F2228;
+    --cat-burgers-text: #F2F3F5;
+    --cat-sides-bg: #1F2228;
+    --cat-sides-text: #F2F3F5;
+    --cat-drinks-bg: #1F2228;
+    --cat-drinks-text: #F2F3F5;
+    --cat-desserts-bg: #1F2228;
+    --cat-desserts-text: #F2F3F5;
+    --cat-border-color: #25282f;
+    --cat-border-width: 1px;
+    
+    /* Checkout button */
+    --checkout-bg: #E8A33D;
+    --checkout-hover: #D79331;
+    --checkout-text: #20140A;
+  }
+
+  .colorful-theme {
+    --background: 0 0% 98%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 340 82% 52%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 260 84% 96%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 260 84% 96%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 260 84% 96%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 340 82% 52%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 260 30% 90%;
+    --input: 260 30% 90%;
+    --ring: 340 82% 52%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-receipt, .print-receipt * {
+    visibility: visible;
+  }
+  .print-receipt {
+    padding: 0;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

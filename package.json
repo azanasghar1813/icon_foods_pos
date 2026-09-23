@@ -1,0 +1,117 @@
+{
+  "name": "restaurant-pos",
+  "productName": "Restaurant POS",
+  "version": "1.0.0",
+  "author": "Icon Food",
+  "description": "Offline Windows Desktop Restaurant POS",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "start": "electron .",
+    "start:build": "cross-env TEST_BUILD=true electron .",
+    "build:frontend": "npm run build --prefix frontend",
+    "build:exe": "node scripts/unlock-electron-output.mjs && npm run build:frontend && electron-builder"
+  },
+  "dependencies": {
+    "adm-zip": "^0.6.0",
+    "archiver": "^8.0.0",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
+    "compression": "^1.8.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "electron-updater": "^6.8.9",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.6.2",
+    "helmet": "^8.3.0",
+    "iconv-lite": "^0.7.3",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.11.0",
+    "multer": "^2.2.0",
+    "node-cron": "^4.6.0",
+    "serialport": "^13.0.0",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
+    "sqlite3": "^6.0.1",
+    "uuid": "^14.0.1",
+    "winston": "^3.19.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.iconfood.restaurantpos",
+    "productName": "Icon Food",
+    "asarUnpack": [
+      "backend/**/*",
+      "backend/.env",
+      "frontend/dist/**/*",
+      "node_modules/**/*"
+    ],
+    "npmRebuild": false,
+    "directories": {
+      "output": "dist-electron-5"
+    },
+    "files": [
+      "main.js",
+      "preload.cjs",
+      "splash.html",
+      "splash-logo.png",
+      "backend/**/*",
+      "backend/.env",
+      "!backend/.env.example",
+      "!backend/**/*.db",
+      "!backend/**/*.db-shm",
+      "!backend/**/*.db-wal",
+      "!backend/**/*.sqlite",
+      "!backend/**/*.sqlite3",
+      "backend/storage/database/pos.db",
+      "!backend/storage/database/ADMIN_PIN.txt",
+      "!backend/testController.js",
+      "!backend/testQueue.js",
+      "!backend/temp_clean.js",
+      "!backend/catalog_dump.json",
+      "!backend/deals.json",
+      "!backend/run_*.js",
+      "!backend/fix_*.sql",
+      "!backend/migrate_*.sql",
+      "!backend/temp_uploads/**",
+      "!backend/node_modules/**",
+      "!frontend/src/pages/POS.old.tsx",
+      "frontend/dist/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true,
+      "differentialPackage": false,
+      "useZip": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Restaurant POS",
+      "include": "build/installer.nsh",
+      "warningsAsErrors": false
+    },
+    "asar": true,
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "azanasghar1813",
+        "repo": "icon_food_software"
+      }
+    ]
+  }
+}

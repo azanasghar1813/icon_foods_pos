@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Build outputs
+dist-electron-5/
+*.exe
+backend/bin/node.exe
+# Environment files
+.env
+.env.*
+backend/.env
+sync-api/.env
+ADMIN_PIN.txt
+**/ADMIN_PIN.txt
+
+# Database & Data
+# backend/storage/database/*.db
+# backend/storage/database/*.sqlite
+# backend/storage/database/*.db-wal
+# backend/storage/database/*.db-shm
+*.db
+*.sqlite
+*.db-wal
+*.db-shm
+*.sqlite3
+backend/data.db
+backend/database.sqlite
+backend/pos.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
