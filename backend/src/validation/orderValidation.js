@@ -3,24 +3,24 @@ import { OrderLifecycleState, OrderType } from '../constants/orderStates.js';
 
 export const createOrderSchema = z.object({
   order_type: z.nativeEnum(OrderType).optional().default(OrderType.DINE_IN),
-  customer_id: z.string().uuid().optional().nullable(),
+  customer_id: z.string().optional().nullable(),
   table_id: z.string().optional().nullable(),
   branch_id: z.string().optional().default('DEFAULT_BRANCH'),
   notes: z.string().optional().nullable()
 }).passthrough();
 
 export const addItemSchema = z.object({
-  product_id: z.string().uuid({ message: 'Product ID must be a valid UUID' }),
-  variant_id: z.string().uuid().optional().nullable(),
+  product_id: z.string().min(1, { message: 'Product ID is required' }),
+  variant_id: z.string().optional().nullable(),
   variant_name: z.string().optional().nullable(),
   modifiers: z.array(z.object({
-    modifier_id: z.string().uuid(),
-    group_id: z.string().uuid().optional().nullable(),
+    modifier_id: z.string().min(1),
+    group_id: z.string().optional().nullable(),
     price_adjustment: z.number().optional(),
     quantity: z.number().int().min(1).optional().default(1)
   })).optional().default([]),
   addons: z.array(z.object({
-    addon_id: z.string().uuid(),
+    addon_id: z.string().min(1),
     unit_price: z.number().optional(),
     quantity: z.number().int().min(1).optional().default(1)
   })).optional().default([]),

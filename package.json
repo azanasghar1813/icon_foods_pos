@@ -1,7 +1,7 @@
 {
   "name": "restaurant-pos",
   "productName": "Restaurant POS",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "author": "Icon Food",
   "description": "Offline Windows Desktop Restaurant POS",
   "main": "main.js",
