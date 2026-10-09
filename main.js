@@ -5,6 +5,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import http from 'http';
+import https from 'https';
 import pkg from 'electron-updater';
 const { autoUpdater, CancellationToken } = pkg;
 
@@ -72,9 +73,9 @@ process.env.NODE_ENV = isProdMode ? 'production' : 'development';
 
 const envCandidates = app.isPackaged
   ? [
-      path.join(process.resourcesPath, 'app.asar.unpacked', 'backend', '.env'),
-      path.join(__dirname, 'backend', '.env'),
-    ]
+    path.join(process.resourcesPath, 'app.asar.unpacked', 'backend', '.env'),
+    path.join(__dirname, 'backend', '.env'),
+  ]
   : [path.join(__dirname, 'backend', '.env')];
 for (const envPath of envCandidates) {
   if (fs.existsSync(envPath)) {
@@ -119,16 +120,21 @@ const ensureSecrets = () => {
 };
 
 ensureSecrets();
+
+// ---------------------------------------------------------------------------
+// Window / process state (declared early so every section below can use it)
+// ---------------------------------------------------------------------------
 const BACKEND_PORT = process.env.PORT || 5000;
 
-
-let mainWindow;
-let splashWindow;
+let mainWindow = null;
+let splashWindow = null;
 let backendProcess = null;
 let backendErrorLog = '';
 let backendExitedCleanly = false;
+let quitting = false;
 
 const createSplashWindow = () => {
+  if (splashWindow && !splashWindow.isDestroyed()) return;
   splashWindow = new BrowserWindow({
     width: 600,
     height: 520,
@@ -141,10 +147,13 @@ const createSplashWindow = () => {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
-    }
+      sandbox: false,
+    },
   });
-  splashWindow.loadFile('splash.html');
+  splashWindow.loadFile(path.join(__dirname, 'splash.html'));
+  splashWindow.on('closed', () => {
+    splashWindow = null;
+  });
 };
 
 const updateSplashStatus = (message, isError = false, errorDetail = '') => {
@@ -166,8 +175,8 @@ const createWindow = () => {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
-    }
+      sandbox: false,
+    },
   });
 
   mainWindow.setMenuBarVisibility(false);
@@ -187,6 +196,10 @@ const createWindow = () => {
       splashWindow.close();
       splashWindow = null;
     }
+  });
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
   });
 };
 
@@ -227,70 +240,78 @@ const startBackendProcess = async () => {
   }
 
   const nodeArgs = app.isPackaged ? ['--use-system-ca', serverScript] : [serverScript];
-  backendProcess = spawn(nodeExe, nodeArgs, {
+  const thisProcess = spawn(nodeExe, nodeArgs, {
     env: backendEnv,
     cwd: app.isPackaged
       ? path.join(process.resourcesPath, 'app.asar.unpacked')
       : __dirname,
     windowsHide: true,
-    // 'ipc' channel added — required for backendProcess.send()/process.on('message')
-    // to work at all. Without this, graceful shutdown messages silently fail.
-    stdio: ['ignore', 'pipe', 'pipe', 'ipc']
+    // 'ipc' channel is required for backendProcess.send()/process.on('message')
+    // so graceful shutdown messages work.
+    stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
   });
+  backendProcess = thisProcess;
 
-  backendProcess.stdout.on('data', (data) => {
+  thisProcess.stdout.on('data', (data) => {
     console.log(`[Backend] ${data.toString()}`);
   });
 
-  backendProcess.stderr.on('data', (data) => {
+  thisProcess.stderr.on('data', (data) => {
     const errStr = data.toString();
     console.error(`[Backend ERROR] ${errStr}`);
     backendErrorLog += errStr;
   });
 
-  backendProcess.on('error', (err) => {
+  thisProcess.on('error', (err) => {
     console.error('Failed to start backend in child process:', err);
     backendErrorLog += err.toString() + '\n';
   });
 
-  backendProcess.on('message', (msg) => {
+  thisProcess.on('message', (msg) => {
     if (msg === 'shutdown-complete') {
       backendExitedCleanly = true;
     }
   });
 
-  backendProcess.on('exit', (code) => {
+  thisProcess.on('exit', (code) => {
     console.log(`Backend process exited with code ${code}`);
     if (code !== 0 && splashWindow && !splashWindow.isDestroyed()) {
       const cleanError = backendErrorLog.substring(0, 500);
       updateSplashStatus('Backend exited unexpectedly.', true, cleanError);
     }
-    // Clean exit (e.g. backup restore) while the UI is already open: respawn backend.
-    if (code === 0 && !quitting && mainWindow && !mainWindow.isDestroyed()) {
-      setTimeout(() => startBackendProcess(), 500);
+    // Clean exit (e.g. backup restore) while the UI is open: respawn backend.
+    // NEVER respawn while the app is quitting.
+    if (
+      code === 0 &&
+      !quitting &&
+      backendProcess === thisProcess &&
+      mainWindow &&
+      !mainWindow.isDestroyed()
+    ) {
+      setTimeout(() => {
+        if (!quitting) startBackendProcess();
+      }, 500);
     }
   });
 
   console.log('Backend process spawned. Waiting for health check...');
 
-  // Increased from 20s to 60s to tolerate slow disks, cold OS file cache,
-  // antivirus first-scan of the executable, or a large post-crash WAL
-  // recovery. The friendlier staged messaging below keeps the user informed
-  // instead of presenting a bare timer.
+  // 60s to tolerate slow disks, cold OS file cache, antivirus scans, WAL recovery.
   const MAX_WAIT_MS = 60000;
   const POLL_INTERVAL_MS = 300;
   const startTime = Date.now();
   let slowStartupMessageShown = false;
 
   const checkHealth = () => {
-    if (backendProcess && backendProcess.exitCode !== null && backendProcess.exitCode !== undefined) {
+    // Stop polling if we quit or this process was replaced.
+    if (quitting || backendProcess !== thisProcess) return;
+
+    if (thisProcess.exitCode !== null && thisProcess.exitCode !== undefined) {
       return;
     }
 
     const elapsed = Date.now() - startTime;
 
-    // After 8s with no response, reassure the user rather than staying silent —
-    // this covers ordinary slow-disk/cold-cache cases that aren't failures.
     if (!slowStartupMessageShown && elapsed > 8000) {
       slowStartupMessageShown = true;
       updateSplashStatus('Still starting up — this can take a bit longer on the first launch of the day...', false);
@@ -304,6 +325,7 @@ const startBackendProcess = async () => {
     }
 
     const req = http.get(`http://127.0.0.1:${BACKEND_PORT}/api/v1/health`, (res) => {
+      res.resume();
       if (res.statusCode === 200) {
         if (mainWindow && !mainWindow.isDestroyed()) {
           console.log('Backend is healthy. Reloading existing window...');
@@ -332,12 +354,12 @@ const startBackendProcess = async () => {
 /**
  * Gracefully stops the backend: sends an IPC 'shutdown' message and waits
  * for confirmation, falling back to a forced taskkill if it doesn't respond
- * within a bounded time. Returns a Promise that resolves once the backend
- * process has actually exited (clean or forced).
+ * within a bounded time. Resolves once the backend has exited (clean or forced).
  */
 const stopBackendGracefully = (timeoutMs = 5000) => {
   return new Promise((resolve) => {
-    if (!backendProcess || backendProcess.killed || backendProcess.exitCode !== null) {
+    const proc = backendProcess;
+    if (!proc || proc.killed || (proc.exitCode !== null && proc.exitCode !== undefined)) {
       resolve();
       return;
     }
@@ -349,12 +371,12 @@ const stopBackendGracefully = (timeoutMs = 5000) => {
       resolve();
     };
 
-    backendProcess.once('exit', finish);
+    proc.once('exit', finish);
 
     try {
-      backendProcess.send('shutdown');
+      proc.send('shutdown');
     } catch (err) {
-      console.warn('[Shutdown] IPC send failed, falling back to taskkill immediately:', err.message);
+      console.warn('[Shutdown] IPC send failed, falling back to forced kill:', err.message);
     }
 
     setTimeout(async () => {
@@ -362,9 +384,9 @@ const stopBackendGracefully = (timeoutMs = 5000) => {
       console.warn('[Shutdown] Backend did not exit gracefully within timeout, forcing kill.');
       const { exec } = await import('child_process');
       if (process.platform === 'win32') {
-        exec(`taskkill /pid ${backendProcess.pid} /T /F`, () => finish());
+        exec(`taskkill /pid ${proc.pid} /T /F`, () => finish());
       } else {
-        backendProcess.kill('SIGKILL');
+        proc.kill('SIGKILL');
         finish();
       }
     }, timeoutMs);
@@ -382,6 +404,7 @@ app.whenReady().then(async () => {
   ipcMain.on('window-close', () => { if (mainWindow) mainWindow.close(); });
 
   createSplashWindow();
+
   startBackendProcess();
 
   ipcMain.on('retry-startup', () => {
@@ -404,7 +427,7 @@ app.whenReady().then(async () => {
 
   if (process.env.GH_TOKEN) {
     autoUpdater.requestHeaders = {
-      Authorization: `Bearer ${process.env.GH_TOKEN}`
+      Authorization: `Bearer ${process.env.GH_TOKEN}`,
     };
   }
 
@@ -426,7 +449,7 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('check-for-updates', async () => {
     try {
-      if (!app.isPackaged) return { error: "Development mode: Updates disabled" };
+      if (!app.isPackaged) return { error: 'Development mode: Updates disabled' };
       return await autoUpdater.checkForUpdates();
     } catch (err) {
       return { error: err.message };
@@ -461,13 +484,12 @@ app.whenReady().then(async () => {
   });
 
   if (app.isPackaged) {
-    autoUpdater.checkForUpdates().catch(err => console.error("Silent update check failed:", err));
+    autoUpdater.checkForUpdates().catch(err => console.error('Silent update check failed:', err));
   }
 });
 
 // Ensures the backend is stopped cleanly (checkpointing SQLite) before
 // Electron actually exits, instead of racing a fire-and-forget taskkill.
-let quitting = false;
 app.on('before-quit', async (event) => {
   if (quitting) return;
   quitting = true;

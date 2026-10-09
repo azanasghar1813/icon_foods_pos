@@ -108,7 +108,10 @@ export function DealConfigurationModal({ isOpen, onClose, deal, onConfirm, avail
     if (filtered.length === 0 && currentComponent.name) {
       const compName = currentComponent.name.toLowerCase();
       if (compName.includes('pizza')) {
-        filtered = availableProducts.filter(p => p.category?.toLowerCase().includes('pizza'));
+        filtered = availableProducts.filter(p => {
+          const cat = p.category?.toLowerCase() || '';
+          return cat.includes('pizza') && (cat.includes('special') || cat.includes('traditional') || cat.includes('trandational'));
+        });
       } else if (compName.includes('burger')) {
         filtered = availableProducts.filter(p => p.category?.toLowerCase().includes('burger'));
       } else if (compName.includes('drink') || compName.includes('beverage')) {

@@ -1231,7 +1231,10 @@ export default function POS() {
                   if (allowedProducts.length === 0 && comp.name) {
                     const compName = comp.name.toLowerCase();
                     if (compName.includes('pizza')) {
-                      allowedProducts = availableProducts.filter(p => p.category?.toLowerCase().includes('pizza'));
+                      allowedProducts = availableProducts.filter(p => {
+                        const cat = p.category?.toLowerCase() || '';
+                        return cat.includes('pizza') && (cat.includes('special') || cat.includes('traditional') || cat.includes('trandational'));
+                      });
                     } else if (compName.includes('burger')) {
                       allowedProducts = availableProducts.filter(p => p.category?.toLowerCase().includes('burger'));
                     } else if (compName.includes('drink') || compName.includes('beverage')) {
@@ -1499,7 +1502,10 @@ export default function POS() {
           if (allowedProducts.length === 0 && comp.name) {
             const compName = comp.name.toLowerCase();
             if (compName.includes('pizza')) {
-              allowedProducts = availableProducts.filter(p => p.category?.toLowerCase().includes('pizza'));
+              allowedProducts = availableProducts.filter(p => {
+                const cat = p.category?.toLowerCase() || '';
+                return cat.includes('pizza') && (cat.includes('special') || cat.includes('traditional') || cat.includes('trandational'));
+              });
             } else if (compName.includes('burger')) {
               allowedProducts = availableProducts.filter(p => p.category?.toLowerCase().includes('burger'));
             } else if (compName.includes('drink') || compName.includes('beverage')) {
